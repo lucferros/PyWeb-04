@@ -102,12 +102,22 @@ from bs4 import BeautifulSoup
 import requests
 
 def get_image(message, image_name):
+    """
+    Determines which image we wish to have our text overlayed on
+
+    :param message: This is the text that will overlay onto our image
+    :type message: String
+    :param image_name: This is the second param offered in the url which determines which image we are going to overlay
+    our text on
+    :type image_name: String
+
+    :return: Returns the image with text overlaid on top of it.
+    """
 
     image = {
         'buzz': 2097248,
         'aliens': 627067
     }
-
     url = 'http://cdn.meme.am/Instance/Preview'
     params = {
         'imageID': image[image_name],
@@ -120,6 +130,15 @@ def get_image(message, image_name):
 
 
 def parse(body, message):
+    """
+    Parses the source of the website for the message we are going to overlay onto our image
+    :param body: This is the raw source html of a website
+    :type body: String
+    :param message: This determines which tags and content we need to parse the raw html.
+    :type message: String
+
+    :return: Returns the text that we wish to overlay onto our image
+    """
     parsed = BeautifulSoup(body, 'html5lib')
     tag = {
         'fact': parsed.find('div', id='content'),
@@ -130,9 +149,16 @@ def parse(body, message):
 
 
 def get_response(content):
+    """
+    Gets the source of the website specified
+    :param content: This will be the first parameter in the url entered, either 'fact' or 'news'
+    :type content: String
+
+    :return: Returns the Fact or News Headline based on the content value provided to the function
+    """
     options = {
         'fact': 'http://unkno.com',
-        'news': 'http://cnn.com',
+        'news': 'http://cnn.com'
     }
     response = requests.get(options[content])
     return parse(response.text, content)
@@ -140,9 +166,7 @@ def get_response(content):
 
 def process(path):
     args = path.strip("/").split("/")
-    print(args[0], args[1])
     message = get_response(args[0])
-
     meme = get_image(message, args[1])
 
     return meme
