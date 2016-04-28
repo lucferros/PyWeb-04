@@ -101,11 +101,12 @@ To submit your homework:
 from bs4 import BeautifulSoup
 import requests
 
-def meme_it(fact):
+
+def buzz_it(message):
     url = 'http://cdn.meme.am/Instance/Preview'
     params = {
         'imageID': 2097248,
-        'text1': fact
+        'text1': message
     }
 
     response = requests.get(url, params)
@@ -113,23 +114,73 @@ def meme_it(fact):
     return response.content
 
 
+def alien_it(message):
+    url = 'http://cdn.meme.am/Instance/Preview'
+    params = {
+        'imageID': 627067,
+        'text1': message
+    }
+
+    response = requests.get(url, params)
+    print(response)
+    print(response.content)
+    return response.content
+
+def parse(body, message):
+    parsed = BeautifulSoup(body, 'html5lib')
+    tag = {
+        'fact': parsed.find('div', id='content'),
+        'news': parsed.find('h2', class_='banner-text banner-text--natural')
+    }
+    content = tag[message]
+    return content.text.strip()
+
 def parse_fact(body):
     parsed = BeautifulSoup(body, 'html5lib')
     fact = parsed.find('div', id='content')
     return fact.text.strip()
 
+
+def parse_news(body):
+    parsed = BeautifulSoup(body, 'html5lib')
+    fact = parsed.find('h2', class_='banner-text banner-text--natural')
+    return fact.text.strip()
+
+def get_response(content):
+    options = {
+        'fact': 'http://unkno.com',
+        'news': 'http://cnn.com',
+    }
+    response = requests.get(options[content])
+    return parse(response.text, content)
+
 def get_fact():
     response = requests.get('http://unkno.com')
     return parse_fact(response.text)
 
+
+def get_news():
+    response = requests.get('http://cnn.com')
+    return parse_news(response.text)
+
+
 def process(path):
     args = path.strip("/").split("/")
+    print(args[0], args[1])
+    if args[0] == 'fact':
+        message = get_fact()
+    elif args[0] == 'news':
+        message = get_news()
 
-    fact = get_fact()
 
-    meme = meme_it(fact)
+    if args[1] == 'buzz':
+        meme = buzz_it(message)
+    elif args[1] == 'aliens':
+        print("i'm in args 1 for aliens")
+        meme = alien_it(message)
 
     return meme
+
 
 def application(environ, start_response):
     headers = [('Content-type', 'image/jpeg')]
@@ -141,11 +192,33 @@ def application(environ, start_response):
         body = process(path)
         status = "200 OK"
     except NameError:
+        headers = [('Content-type', 'text/plain')]
         status = "404 Not Found"
         body = "<h1>Not Found</h1>"
-    except Exception:
+    except Exception as e:
+        headers = [('Content-type', 'text/plain')]
         status = "500 Internal Server Error"
-        body = "<h1> Internal Server Error</h1>"
+        body = """<html>
+    <head><h1>Memeorizer</h1></head>
+    <h2> You screwed up: {}</h2>
+    <p> To use this page, use the URL to decide the output.</p>
+    <p> The first item in the path represents the content of the meme. </p>
+    <ul>
+        <li> /fact </li>
+        <li> /news </li>
+    </ul>
+    <p> The second item in the path represents the image the message will be displayed upon </p>
+    <p></p>
+    <h2> Example: </h2>
+    <ul>
+        <li>http://localhost:8080/fact/buzz</li>
+        <li>http://localhost:8080/fact/aliens</li>
+        <li>http://localhost:8080/news/buzz</li>
+        <li>http://localhost:8080/news/aliens</li>
+    </ul>
+    <p>If you have any further questions, you should find a new line of work</p>
+    </html>
+    """.format(e)
     finally:
         headers.append(('Content-length', str(len(body))))
         start_response(status, headers)
