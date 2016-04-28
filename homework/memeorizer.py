@@ -101,11 +101,16 @@ To submit your homework:
 from bs4 import BeautifulSoup
 import requests
 
+def get_image(message, image_name):
 
-def buzz_it(message):
+    image = {
+        'buzz': 2097248,
+        'aliens': 627067
+    }
+
     url = 'http://cdn.meme.am/Instance/Preview'
     params = {
-        'imageID': 2097248,
+        'imageID': image[image_name],
         'text1': message
     }
 
@@ -113,18 +118,6 @@ def buzz_it(message):
 
     return response.content
 
-
-def alien_it(message):
-    url = 'http://cdn.meme.am/Instance/Preview'
-    params = {
-        'imageID': 627067,
-        'text1': message
-    }
-
-    response = requests.get(url, params)
-    print(response)
-    print(response.content)
-    return response.content
 
 def parse(body, message):
     parsed = BeautifulSoup(body, 'html5lib')
@@ -135,16 +128,6 @@ def parse(body, message):
     content = tag[message]
     return content.text.strip()
 
-def parse_fact(body):
-    parsed = BeautifulSoup(body, 'html5lib')
-    fact = parsed.find('div', id='content')
-    return fact.text.strip()
-
-
-def parse_news(body):
-    parsed = BeautifulSoup(body, 'html5lib')
-    fact = parsed.find('h2', class_='banner-text banner-text--natural')
-    return fact.text.strip()
 
 def get_response(content):
     options = {
@@ -154,30 +137,13 @@ def get_response(content):
     response = requests.get(options[content])
     return parse(response.text, content)
 
-def get_fact():
-    response = requests.get('http://unkno.com')
-    return parse_fact(response.text)
-
-
-def get_news():
-    response = requests.get('http://cnn.com')
-    return parse_news(response.text)
-
 
 def process(path):
     args = path.strip("/").split("/")
     print(args[0], args[1])
-    if args[0] == 'fact':
-        message = get_fact()
-    elif args[0] == 'news':
-        message = get_news()
+    message = get_response(args[0])
 
-
-    if args[1] == 'buzz':
-        meme = buzz_it(message)
-    elif args[1] == 'aliens':
-        print("i'm in args 1 for aliens")
-        meme = alien_it(message)
+    meme = get_image(message, args[1])
 
     return meme
 
